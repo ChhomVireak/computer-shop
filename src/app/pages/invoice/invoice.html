@@ -1,0 +1,95 @@
+@let s = state();
+
+<div class="container">
+  @switch (s.status) {
+    @case ('found') {
+      @let o = s.order;
+      <div class="thanks no-print">
+        <div class="check" aria-hidden="true">✓</div>
+        <div>
+          <h1>Thank you, {{ o.customer.fullName.split(' ')[0] }}!</h1>
+          <p class="muted">Your order <strong>{{ o.id }}</strong> has been placed. We will call {{ o.customer.phone }} to confirm delivery.</p>
+        </div>
+      </div>
+
+      <div class="actions no-print">
+        <button class="btn btn-dark" type="button" (click)="print()">Print</button>
+        <a class="btn btn-ghost" [href]="orders.invoiceUrl(o.id, true)" download>Download .html</a>
+        <a class="btn btn-ghost" [href]="orders.invoiceUrl(o.id)" target="_blank" rel="noopener">Open .html</a>
+        <a class="btn btn-primary push" routerLink="/">Continue shopping</a>
+      </div>
+
+      <article class="panel invoice">
+        <header>
+          <div>
+            <div class="brand">Angkor<span>Tech</span></div>
+            <div class="muted small">Computer Store · Street 271, Phnom Penh<br />+855 12 345 678 · sales@angkortech.example</div>
+          </div>
+          <div class="right">
+            <h2>INVOICE</h2>
+            <div><strong>{{ o.id }}</strong></div>
+            <div class="muted small">{{ o.createdAt | date: 'medium' : '+0700' }}</div>
+          </div>
+        </header>
+
+        <div class="parties">
+          <div>
+            <div class="label">Bill to</div>
+            <strong>{{ o.customer.fullName }}</strong><br />
+            {{ o.customer.address }}, {{ o.customer.city }}<br />
+            {{ o.customer.phone }} · {{ o.customer.email }}
+          </div>
+          <div>
+            <div class="label">Payment</div>
+            {{ payments[o.payment] }}<br />
+            <span class="status" [class.paid]="o.status === 'paid'">{{ o.status === 'paid' ? 'Paid' : 'Awaiting payment' }}</span>
+            @if (o.customer.note) {
+              <div class="label note-label">Note</div>
+              {{ o.customer.note }}
+            }
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Item</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Amount</th></tr>
+            </thead>
+            <tbody>
+              @for (it of o.items; track it.productId; let i = $index) {
+                <tr>
+                  <td>{{ i + 1 }}</td>
+                  <td><a [routerLink]="['/product', it.slug]">{{ it.name }}</a></td>
+                  <td class="num">{{ it.qty }}</td>
+                  <td class="num">{{ it.unitPrice | currency: 'USD' }}</td>
+                  <td class="num">{{ it.lineTotal | currency: 'USD' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <dl class="totals">
+          <div><dt>Subtotal</dt><dd>{{ o.totals.subtotal | currency: 'USD' }}</dd></div>
+          <div><dt>VAT ({{ vatRate * 100 }}%)</dt><dd>{{ o.totals.vat | currency: 'USD' }}</dd></div>
+          <div><dt>Shipping</dt><dd>{{ o.totals.shipping ? (o.totals.shipping | currency: 'USD') : 'Free' }}</dd></div>
+          <div class="grand"><dt>Total</dt><dd>{{ o.totals.total | currency: 'USD' }}</dd></div>
+        </dl>
+
+        <footer class="muted small">
+          Thank you for shopping with Angkor Tech. Goods are covered by the warranty listed on each product.
+        </footer>
+      </article>
+    }
+    @case ('missing') {
+      <div class="panel empty missing">
+        <h1>Invoice not found</h1>
+        <p class="muted">Please check the invoice number.</p>
+        <a class="btn btn-primary" routerLink="/">Back to shop</a>
+      </div>
+    }
+    @default {
+      <p class="muted loading">Loading invoice…</p>
+    }
+  }
+</div>

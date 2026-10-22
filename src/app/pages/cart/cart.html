@@ -1,0 +1,58 @@
+<div class="container">
+  <h1 class="page-title">Shopping cart</h1>
+
+  @if (cart.count() === 0) {
+    <div class="panel empty">
+      <div class="empty-icon" aria-hidden="true">🛒</div>
+      <h2>Your cart is empty</h2>
+      <p class="muted">Browse our laptops and desktops and add something you like.</p>
+      <a class="btn btn-primary" routerLink="/">Start shopping</a>
+    </div>
+  } @else if (!loaded()) {
+    <p class="muted">Loading your cart…</p>
+  } @else {
+    <div class="layout">
+      <section class="panel items" aria-label="Cart items">
+        @for (row of rows(); track row.product.id) {
+          @let p = row.product;
+          <article class="item">
+            <a class="thumb" [routerLink]="['/product', p.slug]" [style.--accent]="p.color">
+              <img [src]="p.image" [alt]="p.name" loading="lazy" />
+            </a>
+            <div class="meta">
+              <a class="name" [routerLink]="['/product', p.slug]">{{ p.name }}</a>
+              <div class="muted small">{{ p.cpu.split('(')[0].trim() }} · {{ p.ram }}</div>
+              <div class="muted small">{{ p.price | currency: 'USD' }} each</div>
+            </div>
+            <div class="qty" aria-label="Quantity">
+              <button type="button" (click)="cart.setQty(p.id, row.qty - 1)" aria-label="Decrease">−</button>
+              <span>{{ row.qty }}</span>
+              <button type="button" (click)="cart.setQty(p.id, row.qty + 1)" [disabled]="row.qty >= p.stock" aria-label="Increase">+</button>
+            </div>
+            <div class="line-total">{{ row.lineTotal | currency: 'USD' }}</div>
+            <button class="remove" type="button" (click)="cart.remove(p.id)" [attr.aria-label]="'Remove ' + p.name">✕</button>
+          </article>
+        }
+        <div class="items-foot">
+          <a routerLink="/">← Continue shopping</a>
+          <button class="link-btn" type="button" (click)="cart.clear()">Clear cart</button>
+        </div>
+      </section>
+
+      <aside class="panel summary">
+        <h2>Order summary</h2>
+        @if (toFreeShipping() > 0) {
+          <p class="ship-hint">Add <strong>{{ toFreeShipping() | currency: 'USD' }}</strong> more for free delivery.</p>
+        }
+        <dl>
+          <div><dt>Subtotal ({{ cart.count() }} items)</dt><dd>{{ totals().subtotal | currency: 'USD' }}</dd></div>
+          <div><dt>VAT ({{ vatRate * 100 }}%)</dt><dd>{{ totals().vat | currency: 'USD' }}</dd></div>
+          <div><dt>Shipping</dt><dd>{{ totals().shipping ? (totals().shipping | currency: 'USD') : 'Free' }}</dd></div>
+          <div class="grand"><dt>Total</dt><dd>{{ totals().total | currency: 'USD' }}</dd></div>
+        </dl>
+        <a class="btn btn-primary btn-block" routerLink="/checkout">Proceed to checkout</a>
+        <p class="muted small secure">Pay by ABA KHQR, bank transfer or cash on delivery.</p>
+      </aside>
+    </div>
+  }
+</div>

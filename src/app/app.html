@@ -1,0 +1,48 @@
+<header class="site-header no-print">
+  <div class="container bar">
+    <a routerLink="/" class="logo" aria-label="Angkor Tech home">
+      <span class="logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M4 18h16M6 18V9l6-5 6 5v9M10 18v-5h4v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
+      </span>
+      <span class="logo-text">Angkor<span>Tech</span></span>
+    </a>
+
+    <nav class="nav" aria-label="Categories">
+      <a routerLink="/" [queryParams]="{ category: 'laptop' }" routerLinkActive="active">Laptops</a>
+      <a routerLink="/" [queryParams]="{ category: 'desktop' }" routerLinkActive="active">Desktops</a>
+      <a routerLink="/" [queryParams]="{ category: 'all-in-one' }" routerLinkActive="active">All-in-One</a>
+      <a routerLink="/" [queryParams]="{ category: 'mini-pc' }" routerLinkActive="active">Mini PCs</a>
+    </nav>
+
+    <a routerLink="/cart" class="cart-link" aria-label="Cart">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /><circle cx="10" cy="20.5" r="1.4" fill="currentColor" /><circle cx="17" cy="20.5" r="1.4" fill="currentColor" /></svg>
+      <span class="cart-text">Cart</span>
+      @if (cart.count() > 0) {
+        <span class="badge">{{ cart.count() }}</span>
+      }
+    </a>
+  </div>
+</header>
+
+<main>
+  <router-outlet />
+</main>
+
+<footer class="site-footer no-print">
+  <div class="container foot">
+    <div>
+      <strong>Angkor Tech</strong> · Computer Store, Phnom Penh<br />
+      <span class="muted">Sample shop built with Angular SSR · © {{ year }}</span>
+    </div>
+    <div class="muted">Free delivery in Phnom Penh on orders over $500</div>
+  </div>
+</footer>
+
+<div class="toasts" aria-live="polite">
+  @for (t of toast.toasts(); track t.id) {
+    <div class="toast">
+      <span>✓ {{ t.message }}</span>
+      <a routerLink="/cart" (click)="toast.dismiss(t.id)">View cart</a>
+    </div>
+  }
+</div>

@@ -1,0 +1,97 @@
+@let s = state();
+
+<div class="container">
+  @switch (s.status) {
+    @case ('found') {
+      @let p = s.product;
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a routerLink="/">Home</a>
+        <span>/</span>
+        <a routerLink="/" [queryParams]="{ category: p.category }">{{ categories[p.category] }}</a>
+        <span>/</span>
+        <span aria-current="page">{{ p.name }}</span>
+      </nav>
+
+      <div class="layout">
+        <div class="gallery panel" [style.--accent]="p.color">
+          <img [src]="p.image" [alt]="p.name" />
+        </div>
+
+        <div class="info">
+          <div class="eyebrow">{{ p.brand }}</div>
+          <h1>{{ p.name }}</h1>
+          <div class="rating" [attr.aria-label]="'Rated ' + p.rating + ' out of 5'">
+            <span class="stars" [style.--r]="p.rating"></span>
+            <span>{{ p.rating }} / 5</span>
+          </div>
+
+          <div class="price">
+            <strong>{{ p.price | currency: 'USD' }}</strong>
+            @if (p.oldPrice) {
+              <s>{{ p.oldPrice | currency: 'USD' }}</s>
+              <span class="save">Save {{ p.oldPrice - p.price | currency: 'USD' : 'symbol' : '1.0-0' }}</span>
+            }
+          </div>
+
+          <p class="desc">{{ p.description }}</p>
+
+          <ul class="highlights">
+            @for (h of p.highlights; track h) {
+              <li>{{ h }}</li>
+            }
+          </ul>
+
+          <div class="stock" [class.low]="p.stock <= 5">
+            <span class="dot"></span>
+            {{ p.stock <= 5 ? 'Only ' + p.stock + ' left in stock' : 'In stock · ' + p.stock + ' units' }}
+          </div>
+
+          <div class="buy">
+            <div class="qty" aria-label="Quantity">
+              <button type="button" (click)="step(-1, p.stock)" [disabled]="qty() <= 1" aria-label="Decrease">−</button>
+              <span>{{ qty() }}</span>
+              <button type="button" (click)="step(1, p.stock)" [disabled]="qty() >= p.stock" aria-label="Increase">+</button>
+            </div>
+            <button class="btn btn-primary" type="button" (click)="addToCart(p)">Add to cart</button>
+            <button class="btn btn-dark" type="button" (click)="addToCart(p, true)">Buy now</button>
+          </div>
+        </div>
+      </div>
+
+      <section class="panel specs">
+        <h2>Specifications</h2>
+        <table>
+          <tbody>
+            @for (row of specs(p); track row[0]) {
+              <tr>
+                <th scope="row">{{ row[0] }}</th>
+                <td>{{ row[1] }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+
+      @if (s.related.length) {
+        <section>
+          <h2 class="related-title">More {{ categories[p.category].toLowerCase() }}</h2>
+          <div class="related">
+            @for (r of s.related; track r.id) {
+              <app-product-card [product]="r" />
+            }
+          </div>
+        </section>
+      }
+    }
+    @case ('missing') {
+      <div class="panel empty missing">
+        <h1>Product not found</h1>
+        <p class="muted">This computer may have been removed or the link is wrong.</p>
+        <a class="btn btn-primary" routerLink="/">Back to catalog</a>
+      </div>
+    }
+    @default {
+      <p class="muted loading">Loading…</p>
+    }
+  }
+</div>
