@@ -17,7 +17,7 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            
+            "outputPath": "dist/computer-shop",
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "assets": [
@@ -33,7 +33,9 @@
             "outputMode": "server",
             "security": {
               "allowedHosts": [
-                "computer-shop.duckdns.org", "localhost"
+                "computer-shop.duckdns.org",
+                "localhost",
+                "127.0.0.1"
               ]
             },
             "ssr": {

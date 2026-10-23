@@ -11,7 +11,16 @@ import { api } from './server/api';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+
+/**
+ * Trust proxy headers (X-Forwarded-For, X-Forwarded-Proto, etc.)
+ * when running behind reverse proxies (Nginx, Cloudflare, AWS ALB, Caddy, PaaS)
+ */
+app.set('trust proxy', true);
+
+const angularApp = new AngularNodeAppEngine({
+  trustProxyHeaders: true,
+});
 
 /**
  * REST API (products, orders, invoice .html) — see src/server/api.ts
@@ -44,16 +53,19 @@ app.use((req, res, next) => {
 
 /**
  * Start the server if this module is the main entry point, or it is ran via PM2.
- * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
+ * The server listens on the port defined by the `PORT` environment variable (defaults to 4000),
+ * and binds to `HOST` (defaults to 0.0.0.0 to accept external traffic in production).
  */
 if (isMainModule(import.meta.url) || process.env['pm_id']) {
-  const port = process.env['PORT'] || 4000;
-  app.listen(port, (error) => {
+  const port = Number(process.env['PORT']) || 4000;
+  const host = process.env['HOST'] || '0.0.0.0';
+
+  app.listen(port, host, (error) => {
     if (error) {
       throw error;
     }
 
-    console.log(`Node Express server listening on http://localhost:${port}`);
+    console.log(`Node Express SSR server listening on http://${host}:${port}`);
   });
 }
 
