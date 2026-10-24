@@ -1,5 +1,5 @@
-import { isPlatformBrowser } from '@angular/common';
-import { Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { Injectable, PLATFORM_ID, REQUEST, inject } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { renderInvoiceHtml } from '../shared/invoice-html';
 import { CreateOrderRequest, Order, OrderItem } from '../shared/models';
@@ -7,34 +7,64 @@ import { calcTotals } from '../shared/pricing';
 import { PRODUCTS } from '../shared/products.data';
 
 const STORAGE_KEY = 'computer_shop_orders';
+const COOKIE_KEY = 'cs_orders';
+
+// Global in-memory store shared across requests in the current process
+const memoryOrders = new Map<string, Order>();
 
 @Injectable({ providedIn: 'root' })
 export class OrderService {
+  private document = inject(DOCUMENT);
+  private request = inject(REQUEST, { optional: true });
   private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  // Store orders in an in-memory array (initialized from localStorage in browser)
-  private orders: Order[] = this.loadInitialOrders();
-
-  private loadInitialOrders(): Order[] {
-    if (this.isBrowser) {
-      try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        if (data) {
-          return JSON.parse(data);
-        }
-      } catch (err) {
-        console.warn('Could not load orders from localStorage:', err);
-      }
-    }
-    return [];
+  constructor() {
+    this.syncFromStorage();
   }
 
-  private persistOrders(): void {
+  private syncFromStorage(): void {
     if (this.isBrowser) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.orders));
-      } catch (err) {
-        console.warn('Could not save orders to localStorage:', err);
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const list: Order[] = JSON.parse(raw);
+          list.forEach((o) => memoryOrders.set(o.id, o));
+        }
+      } catch (e) {
+        console.warn('Could not read orders from localStorage', e);
+      }
+    } else {
+      // During SSR, read orders from the cookie sent by browser
+      try {
+        const cookieHeader = this.request?.headers.get('cookie') ?? '';
+        const cookieMatch = cookieHeader
+          .split(';')
+          .map((c) => c.trim())
+          .find((c) => c.startsWith(COOKIE_KEY + '='));
+        if (cookieMatch) {
+          const raw = decodeURIComponent(cookieMatch.slice(COOKIE_KEY.length + 1));
+          const list: Order[] = JSON.parse(raw);
+          list.forEach((o) => memoryOrders.set(o.id, o));
+        }
+      } catch (e) {
+        console.warn('Could not read orders from SSR cookie', e);
+      }
+    }
+  }
+
+  private persistOrder(order: Order): void {
+    memoryOrders.set(order.id, order);
+
+    if (this.isBrowser) {
+      try {
+        const all = Array.from(memoryOrders.values());
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+
+        // Save last recent orders to cookie so SSR can read them on direct URL visit or refresh
+        const serialized = encodeURIComponent(JSON.stringify(all.slice(-5)));
+        this.document.cookie = `${COOKIE_KEY}=${serialized}; path=/; max-age=86400; SameSite=Lax`;
+      } catch (e) {
+        console.warn('Could not persist order', e);
       }
     }
   }
@@ -72,7 +102,7 @@ export class OrderService {
     const now = new Date();
     const day = now.toISOString().slice(0, 10).replaceAll('-', '');
     const prefix = `INV-${day}-`;
-    const count = this.orders.filter((o) => o.id.startsWith(prefix)).length;
+    const count = Array.from(memoryOrders.keys()).filter((id) => id.startsWith(prefix)).length;
     const orderId = `${prefix}${String(count + 1).padStart(4, '0')}`;
 
     const order: Order = {
@@ -92,14 +122,13 @@ export class OrderService {
       status: 'pending',
     };
 
-    this.orders.push(order);
-    this.persistOrders();
-
+    this.persistOrder(order);
     return of(order);
   }
 
   get(id: string): Observable<Order> {
-    const order = this.orders.find((o) => o.id === id);
+    this.syncFromStorage();
+    const order = memoryOrders.get(id);
     if (!order) {
       return throwError(() => new Error('Invoice not found'));
     }
@@ -107,7 +136,7 @@ export class OrderService {
   }
 
   invoiceUrl(id: string, download = false): string {
-    const order = this.orders.find((o) => o.id === id);
+    const order = memoryOrders.get(id);
     if (!order) return '#';
     const html = renderInvoiceHtml(order);
     return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
