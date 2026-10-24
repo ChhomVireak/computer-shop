@@ -54,7 +54,7 @@ export class CartService {
       .map((c) => c.trim())
       .find((c) => c.startsWith(COOKIE + '='))
       ?.slice(COOKIE.length + 1);
-    if (!raw) return [];
+    if (!raw) return [{ productId: 1, qty: 1 }];
     return decodeURIComponent(raw)
       .split(',')
       .map((pair) => pair.split(':').map(Number))

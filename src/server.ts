@@ -22,11 +22,6 @@ const angularApp = new AngularNodeAppEngine({
 });
 
 /**
- * REST API is no longer used — Angular components now run 100% on in-memory arrays.
- * app.use('/api', api);
- */
-
-/**
  * Serve static files from /browser
  */
 app.use(
@@ -38,12 +33,11 @@ app.use(
 );
 
 /**
- * Handle all other requests by rendering the Angular application.
+ * Handle all other requests by rendering the Angular application via SSR.
  */
 app.use((req, res, next) => {
   angularApp
-    // apiOrigin: lets SSR call the API on this same process (see app/core/internal-api.backend.ts)
-    .handle(req, { apiOrigin: `http://127.0.0.1:${req.socket.localPort}` })
+    .handle(req)
     .then((response) =>
       response ? writeResponseToNodeResponse(response, res) : next(),
     )

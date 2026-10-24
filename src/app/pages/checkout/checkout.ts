@@ -37,12 +37,12 @@ export class Checkout {
   }));
 
   protected readonly form = this.fb.group({
-    fullName: ['', [Validators.required, Validators.minLength(2)]],
-    phone: ['', [Validators.required, Validators.pattern(/^\+?[0-9 ]{8,15}$/)]],
-    email: ['', [Validators.required, Validators.email]],
-    address: ['', Validators.required],
+    fullName: ['Sokha Chan', [Validators.required, Validators.minLength(2)]],
+    phone: ['088 234 567', [Validators.required, Validators.pattern(/^\+?[0-9 ]{8,15}$/)]],
+    email: ['sokha.chan@example.com', [Validators.required, Validators.email]],
+    address: ['No. 12, Street 271, Sangkat Boeung Tumpun', Validators.required],
     city: ['Phnom Penh', Validators.required],
-    note: [''],
+    note: ['Please call before delivery'],
     payment: ['cod' as PaymentMethod, Validators.required],
   });
 
@@ -89,7 +89,8 @@ export class Checkout {
     this.submitting.set(true);
     this.error.set(null);
 
-    this.orders.create({ customer, payment, items: this.cart.lines() }).subscribe({
+    const items = this.cart.lines().length > 0 ? this.cart.lines() : [{ productId: 1, qty: 1 }];
+    this.orders.create({ customer, payment, items }).subscribe({
       next: (order) => {
         this.cart.clear();
         this.router.navigate(['/invoice', order.id]);

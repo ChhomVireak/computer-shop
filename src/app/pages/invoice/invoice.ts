@@ -1,11 +1,10 @@
-import { CurrencyPipe, DOCUMENT, DatePipe, isPlatformBrowser } from '@angular/common';
-import { ChangeDetectionStrategy, Component, PLATFORM_ID, RESPONSE_INIT, inject, input } from '@angular/core';
+import { CurrencyPipe, DOCUMENT, DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, RESPONSE_INIT, inject, input } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { catchError, map, of, switchMap, tap } from 'rxjs';
 import { OrderService } from '../../core/order.service';
-import { renderInvoiceHtml } from '../../shared/invoice-html';
 import { Order } from '../../shared/models';
 import { PAYMENT_LABELS, VAT_RATE } from '../../shared/pricing';
 
@@ -26,7 +25,6 @@ export class Invoice {
   private document = inject(DOCUMENT);
   private title = inject(Title);
   private responseInit = inject(RESPONSE_INIT, { optional: true });
-  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly payments = PAYMENT_LABELS;
   protected readonly vatRate = VAT_RATE;
@@ -52,30 +50,5 @@ export class Invoice {
 
   protected print() {
     this.document.defaultView?.print();
-  }
-
-  protected downloadHtml(order: Order) {
-    if (!this.isBrowser) return;
-    const html = renderInvoiceHtml(order);
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = this.document.createElement('a');
-    a.href = url;
-    a.download = `${order.id}.html`;
-    this.document.body.appendChild(a);
-    a.click();
-    this.document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  protected openHtml(order: Order) {
-    if (!this.isBrowser) return;
-    const html = renderInvoiceHtml(order);
-    const win = this.document.defaultView?.open('', '_blank');
-    if (win) {
-      win.document.open();
-      win.document.write(html);
-      win.document.close();
-    }
   }
 }

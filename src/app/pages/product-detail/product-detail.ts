@@ -73,13 +73,9 @@ export class ProductDetail {
     this.qty.update((q) => Math.max(1, Math.min(max, q + delta)));
   }
 
-  protected addToCart(p: Product, goToCart = false) {
+  protected addToCart(p: Product, goToCart = true) {
     this.cart.add(p.id, this.qty());
-    if (goToCart) {
-      this.router.navigate(['/cart']);
-    } else {
-      this.toast.show(`${this.qty()} × ${p.name} added to cart`);
-    }
+    this.router.navigate(['/cart']);
   }
 
   private setSeo(s: State) {

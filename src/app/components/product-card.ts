@@ -1,8 +1,7 @@
 import { CurrencyPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../core/cart.service';
-import { ToastService } from '../core/toast.service';
 import { Product } from '../shared/models';
 import { CATEGORY_LABELS } from '../shared/pricing';
 
@@ -46,7 +45,7 @@ export class ProductCard {
   readonly product = input.required<Product>();
   protected readonly categories = CATEGORY_LABELS;
   private cart = inject(CartService);
-  private toast = inject(ToastService);
+  private router = inject(Router);
 
   protected discount(p: Product) {
     return Math.round((1 - p.price / (p.oldPrice ?? p.price)) * 100);
@@ -54,6 +53,6 @@ export class ProductCard {
 
   protected add(p: Product) {
     this.cart.add(p.id);
-    this.toast.show(`${p.name} added to cart`);
+    this.router.navigate(['/cart']);
   }
 }
