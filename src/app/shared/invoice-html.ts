@@ -1,5 +1,5 @@
-import { Order } from '../app/shared/models';
-import { PAYMENT_LABELS, VAT_RATE } from '../app/shared/pricing';
+import { Order } from './models';
+import { PAYMENT_LABELS, VAT_RATE } from './pricing';
 
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);

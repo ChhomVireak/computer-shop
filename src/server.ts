@@ -6,7 +6,6 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
-import { api } from './server/api';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -23,9 +22,9 @@ const angularApp = new AngularNodeAppEngine({
 });
 
 /**
- * REST API (products, orders, invoice .html) — see src/server/api.ts
+ * REST API is no longer used — Angular components now run 100% on in-memory arrays.
+ * app.use('/api', api);
  */
-app.use('/api', api);
 
 /**
  * Serve static files from /browser

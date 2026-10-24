@@ -94,8 +94,8 @@ export class Checkout {
         this.cart.clear();
         this.router.navigate(['/invoice', order.id]);
       },
-      error: (err: HttpErrorResponse) => {
-        this.error.set(err.error?.message ?? 'Could not place your order. Please try again.');
+      error: (err: any) => {
+        this.error.set(err?.message ?? err?.error?.message ?? 'Could not place your order. Please try again.');
         this.submitting.set(false);
       },
     });

@@ -1,7 +1,7 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Injectable } from '@angular/core';
+import { Observable, of, throwError } from 'rxjs';
 import { Product } from '../shared/models';
+import { PRODUCTS } from '../shared/products.data';
 
 export interface ProductQuery {
   category?: string | null;
@@ -11,21 +11,45 @@ export interface ProductQuery {
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
-  private http = inject(HttpClient);
+  // Use in-memory array data instead of fetching from an API
+  private readonly products: Product[] = [...PRODUCTS];
 
   list(query: ProductQuery = {}): Observable<Product[]> {
-    let params = new HttpParams();
-    for (const [key, value] of Object.entries(query)) {
-      if (value) params = params.set(key, value);
+    let list = [...this.products];
+
+    if (query.category) {
+      list = list.filter((p) => p.category === query.category);
     }
-    return this.http.get<Product[]>('/api/products', { params });
+
+    if (query.q) {
+      const term = query.q.toLowerCase().trim();
+      list = list.filter((p) =>
+        [p.name, p.brand, p.cpu, p.gpu, p.category].join(' ').toLowerCase().includes(term),
+      );
+    }
+
+    if (query.sort === 'price-asc') {
+      list.sort((a, b) => a.price - b.price);
+    } else if (query.sort === 'price-desc') {
+      list.sort((a, b) => b.price - a.price);
+    } else if (query.sort === 'rating') {
+      list.sort((a, b) => b.rating - a.rating);
+    }
+
+    return of(list);
   }
 
   getBySlug(slug: string): Observable<Product> {
-    return this.http.get<Product>(`/api/products/${encodeURIComponent(slug)}`);
+    const product = this.products.find((p) => p.slug === slug);
+    if (!product) {
+      return throwError(() => new Error('Product not found'));
+    }
+    return of(product);
   }
 
   getByIds(ids: number[]): Observable<Product[]> {
-    return this.http.get<Product[]>('/api/products', { params: { ids: ids.join(',') } });
+    const wanted = new Set(ids);
+    const list = this.products.filter((p) => wanted.has(p.id));
+    return of(list);
   }
 }
